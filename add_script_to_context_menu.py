@@ -2,14 +2,14 @@ import os
 import sys
 import winreg
 
-def create_command(shell_key, file_path, name, accepts_arg_path = True):
+def create_command(shell_key, file_path, name, accepts_filepath_arg = True):
 
     """
     Create the command key for the given mode
     :param shell_key: The key to create the command key under
     :param file_path: The path to the script
     :param name: The name of the script
-    :param accepts_arg_path: Whether the script accepts a path as an argument
+    :param accepts_filepath_arg: Whether the script accepts a file path as an argument
     :return: None
     """
 
@@ -37,12 +37,12 @@ def create_command(shell_key, file_path, name, accepts_arg_path = True):
 
     command_key = winreg.CreateKey(script_key, "command")
 
-    if accepts_arg_path:
+    if accepts_filepath_arg:
 
         winreg.SetValue(command_key, "", winreg.REG_SZ, f'cmd.exe /c python.exe "{file_path}" "%1"')
 
     else:
-        winreg.SetValue(command_key, "", winreg.REG_SZ, f'cmd.exe /c python.exe "{file_path}"')
+        winreg.SetValue(command_key, "", winreg.REG_SZ, f'cmd.exe /c python.exe "{file_path}" "%V"')
 
     winreg.CloseKey(command_key)
     winreg.CloseKey(script_key)
@@ -70,7 +70,7 @@ def add_to_context_menu(file_path, name, chosen_paths: dict):
             print(f"Could not open key {key_path}")
             input("Press enter to continue...")
             continue
-        create_command(shell_key, file_path, name, accepts_arg_path= mode != '--background')
+        create_command(shell_key, file_path, name, accepts_filepath_arg= mode != '--background')
         winreg.CloseKey(shell_key)
 
     if reg:
