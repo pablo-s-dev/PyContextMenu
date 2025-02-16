@@ -1,6 +1,27 @@
-# PyContextMenu: Add Python Scripts to the Windows Context Menu ⚙️
+<div align="center">
+   <h1>
+        PyContextMenu 🖱️
+       
+   </h1>
+    <h3>Add Python Scripts to the Windows Context Menu</h3>
+</div>
 
-PyContextMenu allows you to easily add Python scripts to the Windows context menu (right-click menu) for files, folders, and the desktop background.
+<br/>
+
+<div align="center">
+    PyContextMenu allows you to easily add Python scripts to the Windows context  <br>
+    menu (right-click menu) for files, folders, and the background. <br>
+</div>
+
+<br/>
+
+
+<p align="center">
+    <img src="examples/pycontextmenu.png" alt="PyContextMenu Example">
+</p>
+
+
+
 
 ## Functionality
 
@@ -36,7 +57,7 @@ There are two ways to add a Python script to the context menu:
 
 3.  Choose the desired location(s) for the context menu entry (files, folders, background, or all).
 
-![PyContextMenu Example](examples/pycontextmenu.png) 
+
 
 
 ### Method 2: Using the Command Line
