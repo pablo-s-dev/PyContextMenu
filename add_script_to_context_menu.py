@@ -39,10 +39,10 @@ def create_command(shell_key, file_path, name, accepts_filepath_arg = True):
 
     if accepts_filepath_arg:
 
-        winreg.SetValue(command_key, "", winreg.REG_SZ, f'cmd.exe /c python.exe "{file_path}" "%1"')
+        winreg.SetValue(command_key, "", winreg.REG_SZ, f'cmd.exe /k python.exe "{file_path}" "%1"')
 
     else:
-        winreg.SetValue(command_key, "", winreg.REG_SZ, f'cmd.exe /c python.exe "{file_path}" "%V"')
+        winreg.SetValue(command_key, "", winreg.REG_SZ, f'cmd.exe /k python.exe "{file_path}" "%V"')
 
     winreg.CloseKey(command_key)
     winreg.CloseKey(script_key)
