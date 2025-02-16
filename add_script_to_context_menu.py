@@ -2,7 +2,17 @@ import os
 import sys
 import winreg
 
-def create_command(shell_key, file_path, name, accepts_filepath_arg = True):
+def get_asset_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller"""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
+def create_command(shell_key, file_path, name, icon_path, accepts_filepath_arg = True, ):
 
     """
     Create the command key for the given mode
@@ -12,21 +22,6 @@ def create_command(shell_key, file_path, name, accepts_filepath_arg = True):
     :param accepts_filepath_arg: Whether the script accepts a file path as an argument
     :return: None
     """
-
-    if not os.path.exists(file_path):
-        print(f"{file_path} not found")
-        input("Press enter to continue...")
-        return
-
-    if not os.path.isfile(file_path):
-        print(f"{file_path} is not a file")
-        input("Press enter to continue...")
-        return
-
-    if not file_path.endswith('.py'):
-        print(f"{file_path} is not a python script")
-        input("Press enter to continue...")
-        return
 
     try:
         script_key = winreg.CreateKey(shell_key, name)
@@ -44,11 +39,13 @@ def create_command(shell_key, file_path, name, accepts_filepath_arg = True):
     else:
         winreg.SetValue(command_key, "", winreg.REG_SZ, f'cmd.exe /k python.exe "{file_path}" "%V"')
 
+    winreg.SetValueEx(script_key, "icon", 0, winreg.REG_SZ, icon_path)
+
     winreg.CloseKey(command_key)
     winreg.CloseKey(script_key)
 
 
-def add_to_context_menu(file_path, name, chosen_paths: dict):
+def add_to_context_menu(file_path, name, icon_path, chosen_paths: dict,):
 
     """
     Add the script to the context menu
@@ -70,7 +67,13 @@ def add_to_context_menu(file_path, name, chosen_paths: dict):
             print(f"Could not open key {key_path}")
             input("Press enter to continue...")
             continue
-        create_command(shell_key, file_path, name, accepts_filepath_arg= mode != '--background')
+        create_command(
+            shell_key,
+            file_path,
+            name,
+            accepts_filepath_arg= mode != '--background',
+            icon_path=icon_path
+        )
         winreg.CloseKey(shell_key)
 
     if reg:
@@ -119,7 +122,7 @@ def get_shell_paths(target_extension = "*"):
     }
     return all_shell_paths
 
-def run():
+def run(default_icon_path=None):
 
     """
     Runs the script
@@ -130,6 +133,60 @@ def run():
 
     script_path = os.path.abspath(sys.argv[1])
     choice = sys.argv[2]
+    icon_path = sys.argv[3] if len(sys.argv) > 3 else input("Enter the path to the icon: (or press enter to use the default icon)")
+
+    if not icon_path or icon_path == "":
+
+        if not default_icon_path:
+            import appdirs
+            import shutil
+
+            app_dir = appdirs.user_data_dir("PyContextMenu", appauthor=False)
+            os.makedirs(app_dir, exist_ok=True)
+            os.makedirs(os.path.join(app_dir, "assets"), exist_ok=True)
+
+            # Copy icon to permanent location
+            icon_dest = os.path.join(app_dir, "assets\\python.ico")
+            if not os.path.exists(icon_dest):
+                try:
+                    shutil.copy(get_asset_path("assets\\python.ico"), icon_dest)
+                except Exception as e:
+                    print(f"Could not copy icon: {e}")
+
+            default_icon_path = icon_dest
+
+
+        icon_path = default_icon_path
+
+    if not os.path.exists(icon_path):
+        print(f"{icon_path} not found")
+        input("Press enter to continue...")
+        return
+
+    if not os.path.exists(script_path):
+        print(f"{script_path} not found")
+        input("Press enter to continue...")
+        return
+
+    if not os.path.isfile(script_path):
+        print(f"{script_path} is not a file")
+        input("Press enter to continue...")
+        return
+
+    if not script_path.endswith('.py'):
+        print(f"{script_path} is not a python script")
+        input("Press enter to continue...")
+        return
+
+    if not choice in ['--all', '--files', '--folders', '--background']:
+        print(f"Invalid choice {choice}")
+        input("Press enter to continue...")
+        return
+
+    if not os.path.exists(icon_path):
+        print(f"{icon_path} not found")
+        input("Press enter to continue...")
+        return
 
     # It seems that I need to write the shell command under HKCR to target file extensions
     # so I will remove this feature for now
@@ -152,10 +209,12 @@ def run():
     else:
         chosen_paths = {choice: all_shell_paths[choice]}
 
+
+
     # remove dir and extension
     name = script_path.replace(f'{os.path.dirname(script_path)}\\', '').replace('.py', '')
 
-    add_to_context_menu(script_path, name, chosen_paths)
+    add_to_context_menu(script_path, name, icon_path, chosen_paths)
     print(f"Script {name} added to context menu!\n")
     input("Press enter to continue...")
 
